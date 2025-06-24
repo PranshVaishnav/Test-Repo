@@ -21,7 +21,7 @@ public:
     }
 };
 
-int GlobalConstant = 100;  // Should be UPPER_SNAKE_CASE
+int m_GlobalConstant = 100;  // Should be UPPER_SNAKE_CASE
 
 void global_function() {   // OK - snake_case
     // Function body
