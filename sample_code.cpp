@@ -1,10 +1,12 @@
 #include <iostream>
 using namespace std;
+       
+
 
 class m_myClass {  // Should be PascalCase
 public:
     int someVariable;    // OK
-    int BadVariableName;  // Should be snake_case or camelCase
+    int BadVarsdfgsiableName;  // Should be snake_case or camelCase
     
     void SomeFunction() {  // Should be camelCase or snake_case
         int* ptr = new int(42);  // Raw pointer usage
