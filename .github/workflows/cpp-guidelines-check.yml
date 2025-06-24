@@ -60,7 +60,7 @@ jobs:
     
     - name: Upload analysis results
       if: steps.changed-files.outputs.files != ''
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: cpp-analysis-results
         path: |
