@@ -7,7 +7,7 @@ public:
     int BadVariableName;  // Should be snake_case or camelCase
     
     void SomeFunction() {  // Should be camelCase or snake_case
-        int* ptr = new int(42);  // Raw pointer usage
+        int* ptr =  new int(42);  // Raw pointer usage
         cout << *ptr << endl;    // No null check
         delete ptr;              // Raw memory management
     }
