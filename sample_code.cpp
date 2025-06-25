@@ -1,7 +1,7 @@
 #include <iostream>
 using namespace std;
 
-class myClass {  // Should be PascalCase
+class MyClass {  // Should be PascalCase
 public:
     int SomeVariable;    // OK
     int BadVariableName;  // Should be snake_case or camelCase
@@ -18,7 +18,8 @@ public:
         // This line is too long
         int m_variable_with_trailing_spaces = 5;
         
-        char* buffer = (char*)malloc(100);  // Raw malloc
+        char* 
+buffer = (char*)malloc(100);  // Raw malloc
         free(buffer);                       // Raw free
     }
 };
