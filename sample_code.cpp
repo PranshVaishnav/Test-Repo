@@ -23,6 +23,9 @@ public:
 
 int GlobalConstant = 100;  // Should be UPPER_SNAKE_CASE
 
-void global_function() {   // OK - snake_case
+void global_function() { 
+    
+    
+    // OK - snake_case
     // Function body
 }
