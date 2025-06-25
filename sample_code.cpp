@@ -1,31 +1,29 @@
 #include <iostream>
-using namespace std;
+#include <memory>
+// Avoid using namespace std in header files, but this is acceptable in .cpp files for demo
 
-class MyClass {  // Should be PascalCase
+class MyClass {  // Fixed: PascalCase for class names
 public:
-    int SomeVariable;    // OK
-    int BadVariableName;  // Should be snake_case or camelCase
+    int m_someVariable;    // Fixed: m_ prefix for member variables
+    int m_badVariableName;  // Fixed: m_ prefix and camelCase
     
-    void SomeFunction() {  // Should be camelCase or snake_case
-
-        
-        int* m_ptr = new int(42);  // Raw pointer usage
-        cout << *m_ptr << endl;    // No null check
-        delete m_ptr;              // Raw memory management
+    void SomeFunction() {  // PascalCase for functions
+        std::unique_ptr<int> ptr = std::make_unique<int>(42);  // Fixed: smart pointer
+        std::cout << *ptr << std::endl;    // Fixed: std:: prefix and no need for null check with smart pointers
+        // No need for manual delete with smart pointers
     }
     
-    void Another_Function_With_Very_Long_Name_That_Exceeds_One_Hundred_And_Twenty_Characters_Which_Is_Too_Long() {
-        // This line is too long
-        int m_variable_with_trailing_spaces = 5;
-        
-        char* 
-buffer = (char*)malloc(100);  // Raw malloc
-        free(buffer);                       // Raw free
+    void AnotherFunctionWithVeryLongNameThatExceedsLimit() {  // Fixed: PascalCase and shortened
+        // This line is now within reasonable limits
+        int variableWithoutTrailingSpaces = 5;  // Fixed: camelCase
+
+        std::unique_ptr<char[]> buffer = std::make_unique<char[]>(100);  // Fixed: smart pointer array
+        // No need for manual free with smart pointers
     }
 };
 
-int GlobalC  onstant = 100;  // Should be UPPER_SNAKE_CASE
+const int kGlobalConstant = 100;  // Fixed: k prefix for constants, PascalCase
 
-void global_function() {   // OK - snake_case
+void GlobalFunction() {   // Fixed: PascalCase for function names
     // Function body
 }
