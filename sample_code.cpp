@@ -14,7 +14,7 @@ public:
     
     void Another_Function_With_Very_Long_Name_That_Exceeds_One_Hundred_And_Twenty_Characters_Which_Is_Too_Long() {
         // This line is too long
-        int variable_with_trailing_spaces = 5;
+        int m_variable_with_trailing_spaces = 5;
         
         char* buffer = (char*)malloc(100);  // Raw malloc
         free(buffer);                       // Raw free
