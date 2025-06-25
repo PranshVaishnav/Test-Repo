@@ -24,7 +24,7 @@ buffer = (char*)malloc(100);  // Raw malloc
     }
 };
 
-int GlobalConstant = 100;  // Should be UPPER_SNAKE_CASE
+int GlobalC  onstant = 100;  // Should be UPPER_SNAKE_CASE
 
 void global_function() {   // OK - snake_case
     // Function body
