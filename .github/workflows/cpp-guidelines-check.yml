@@ -40,23 +40,20 @@ jobs:
         echo "Changed C++ files: $CHANGED_FILES"
     
     - name: Run C++ Guidelines Analyzer
+      id: analysis
       if: steps.changed-files.outputs.files != ''
       run: |
         python3 cpp_code_analyzer.py --format json --output analysis_result.json ${{ steps.changed-files.outputs.files }}
-    
-    - name: Generate Summary Report
-      if: steps.changed-files.outputs.files != ''
-      run: |
         python3 cpp_code_analyzer.py --format text --output analysis_report.txt ${{ steps.changed-files.outputs.files }}
         
-        # Create a summary for the PR comment
-        cat > pr_comment.md << 'EOF'
-        ## 📋 C++ Code Guidelines Analysis
+        # Set outputs for later steps
+        ERRORS=$(python3 -c "import json; data=json.load(open('analysis_result.json')); print(data['summary']['errors'])")
+        WARNINGS=$(python3 -c "import json; data=json.load(open('analysis_result.json')); print(data['summary']['warnings'])")
+        TOTAL=$(python3 -c "import json; data=json.load(open('analysis_result.json')); print(data['summary']['total_violations'])")
         
-        EOF
-        
-        # Add analysis results to comment
-        cat analysis_report.txt >> pr_comment.md
+        echo "errors=$ERRORS" >> $GITHUB_OUTPUT
+        echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
+        echo "total=$TOTAL" >> $GITHUB_OUTPUT
     
     - name: Upload analysis results
       if: steps.changed-files.outputs.files != ''
@@ -67,7 +64,26 @@ jobs:
           analysis_result.json
           analysis_report.txt
     
-    - name: Comment on PR
+    - name: Find existing comment
+      if: steps.changed-files.outputs.files != ''
+      uses: actions/github-script@v6
+      id: find-comment
+      with:
+        script: |
+          const comments = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const botComment = comments.data.find(comment => 
+            comment.user.type === 'Bot' && 
+            comment.body.includes('📋 C++ Code Guidelines Analysis Results')
+          );
+          
+          return botComment ? botComment.id : null;
+    
+    - name: Update or create PR comment
       if: steps.changed-files.outputs.files != ''
       uses: actions/github-script@v6
       with:
@@ -80,6 +96,7 @@ jobs:
           
           // Create comment body
           let commentBody = `## 📋 C++ Code Guidelines Analysis Results\n\n`;
+          commentBody += `*Last updated: ${new Date().toISOString()}*\n\n`;
           
           // Add summary
           const summary = analysisData.summary;
@@ -92,6 +109,13 @@ jobs:
           if (summary.total_violations === 0) {
             commentBody += `✅ **Great job!** No guideline violations found.\n`;
           } else {
+            // Add status indicator
+            if (summary.errors > 0) {
+              commentBody += `❌ **Status**: BLOCKING - This PR cannot be merged due to errors\n\n`;
+            } else if (summary.warnings > 0) {
+              commentBody += `⚠️ **Status**: REVIEW REQUIRED - This PR has warnings that should be addressed\n\n`;
+            }
+            
             commentBody += `<details>\n<summary>📝 Detailed Report (click to expand)</summary>\n\n`;
             commentBody += `\`\`\`\n${reportText}\n\`\`\`\n\n</details>\n`;
             
@@ -104,23 +128,54 @@ jobs:
             commentBody += `- **Comments**: Add Doxygen-style comments for public functions in headers\n`;
           }
           
-          // Post comment
-          await github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: commentBody
-          });
+          // Update existing comment or create new one
+          const existingCommentId = ${{ steps.find-comment.outputs.result }};
+          
+          if (existingCommentId) {
+            // Update existing comment
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existingCommentId,
+              body: commentBody
+            });
+            console.log('Updated existing comment');
+          } else {
+            // Create new comment
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
+            console.log('Created new comment');
+          }
     
-    - name: Set status based on errors
+    - name: Set status based on violations
       if: steps.changed-files.outputs.files != ''
       run: |
-        # Read JSON results and check for errors
-        ERRORS=$(python3 -c "import json; data=json.load(open('analysis_result.json')); print(data['summary']['errors'])")
+        ERRORS=${{ steps.analysis.outputs.errors }}
+        WARNINGS=${{ steps.analysis.outputs.warnings }}
+        TOTAL=${{ steps.analysis.outputs.total }}
+        
+        echo "Analysis Results:"
+        echo "- Errors: $ERRORS"
+        echo "- Warnings: $WARNINGS"
+        echo "- Total violations: $TOTAL"
         
         if [ "$ERRORS" -gt 0 ]; then
-          echo "❌ Found $ERRORS error(s) in C++ code guidelines"
+          echo "❌ BLOCKING: Found $ERRORS error(s) in C++ code guidelines"
+          echo "This PR cannot be merged until all errors are fixed."
+          exit 1
+        elif [ "$WARNINGS" -gt 0 ]; then
+          echo "⚠️ REVIEW REQUIRED: Found $WARNINGS warning(s) in C++ code guidelines"
+          echo "Please review and address these warnings before merging."
           exit 1
         else
-          echo "✅ C++ code guidelines check passed"
+          echo "✅ C++ code guidelines check passed - no violations found"
         fi
+    
+    - name: Handle no C++ files changed
+      if: steps.changed-files.outputs.files == ''
+      run: |
+        echo "ℹ️ No C++ files were changed in this PR - skipping guidelines check" 
